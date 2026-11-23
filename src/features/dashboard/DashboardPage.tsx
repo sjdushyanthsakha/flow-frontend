@@ -230,7 +230,7 @@ export default function DashboardPage({ selectedProject, search, view, onNavigat
           onEditTask={editTask} onOpenActivityTask={openTaskDetails} />
       )}
       {currentView === 'board' && <TaskBoard key={scopedProject?.id ?? 'workspace'} tasks={tasks}
-        project={scopedProject} members={members} timeZone={timezone} workspaceSearch={query} revision={activityRevision}
+        project={scopedProject} projects={projects} members={members} timeZone={timezone} workspaceSearch={query} revision={activityRevision}
         saving={saving} onMove={moveTask} onEdit={editTask} onOpen={(task) => setDrawer({ id: task.id, variant: 'board' })}
         onCreate={(status) => setEditor({ kind: 'tasks', projectId: scopedProject?.id, status })} />}
       {currentView === 'timeline' && <TaskTimeline key={scopedProject?.id ?? 'workspace'}

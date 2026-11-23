@@ -70,6 +70,10 @@ export function WorkspaceEditor({ editor, dashboard, onClose, onSave, onDelete, 
           {editor.kind === 'projects' ? <>
             <label>Project name<input name="name" required maxLength={200} defaultValue={project?.name} autoFocus /></label>
             <label>Description<textarea name="description" rows={3} maxLength={5000} defaultValue={project?.description ?? ''} /></label>
+            <label>Assignee<select name="ownerId" defaultValue={project?.ownerId ?? dashboard.userId}>
+              <option value="">Unassigned</option>
+              {dashboard.members.map((member) => <option key={member.id} value={member.id}>{member.name}</option>)}
+            </select></label>
             <label>Start date<input name="startDate" type="date" defaultValue={project?.startDate ?? ''} /></label>
           </> : <>
             <label>Task title<input name="title" required maxLength={240} defaultValue={task?.title} autoFocus /></label>

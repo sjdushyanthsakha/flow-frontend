@@ -5,7 +5,8 @@ import { userPath, userStatuses, type UserDetail, type WorkspaceUser } from './d
 
 export type UserEditMode = { kind: 'edit'; user: WorkspaceUser } | { kind: 'create' } | { kind: 'invite' };
 type Option = { id: string; name: string };
-type Options = { departments: Option[]; managers: Option[]; roles: { key: string; name: string }[] };
+type Options = { departments: Option[]; managers: Option[]; roles: { key: string; name: string }[]; initialPasswordAvailable: boolean };
+type CreatedUser = WorkspaceUser & { initialPassword?: string };
 
 export function UserEditor({ mode, onClose, onSave }: {
   mode: UserEditMode; onClose: () => void; onSave: (detail?: UserDetail) => void;
@@ -16,6 +17,7 @@ export function UserEditor({ mode, onClose, onSave }: {
   const [attempt, setAttempt] = useState(0);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [createdUser, setCreatedUser] = useState<CreatedUser>();
   const user = mode.kind === 'edit' ? mode.user : undefined;
   const isInvite = mode.kind === 'invite';
   const title = user ? 'Edit user' : isInvite ? 'Invite user' : 'Create user';
@@ -39,13 +41,25 @@ export function UserEditor({ mode, onClose, onSave }: {
       const request = { method: user ? 'PATCH' : 'POST', body: JSON.stringify(fields) };
       if (user) onSave(await dashboardRequest<UserDetail>(`${userPath}/${user.id}`, request));
       else {
-        await dashboardRequest<WorkspaceUser>(userPath, request);
-        onSave();
+        const created = await dashboardRequest<CreatedUser>(userPath, request);
+        if (created.initialPassword) setCreatedUser(created);
+        else onSave();
       }
     } catch (failure) {
       setError(failure instanceof Error ? failure.message : 'Could not save the user.');
     } finally { setSaving(false); }
   }
+
+  if (createdUser) return <OperationsDialog title="User created" eyebrow="Flowdeck" variant="wide" onClose={() => onSave()}>
+    <div className="user-edit-form">
+      <div className="user-password-info">
+        <label>Initial password<input type="text" readOnly value={createdUser.initialPassword}
+          onFocus={(event) => event.currentTarget.select()} /></label>
+        <p>Copy this password before closing. Share it privately with {createdUser.email} and ask them to change it after signing in.</p>
+      </div>
+      <footer><button type="button" className="button button--primary" onClick={() => onSave()}>Done</button></footer>
+    </div>
+  </OperationsDialog>;
 
   return <OperationsDialog title={title} eyebrow="Flowdeck" variant="wide" busy={saving} onClose={onClose}
     description={isInvite ? 'Save an invitation as pending in this workspace. Email delivery is unavailable.' :
@@ -78,6 +92,10 @@ export function UserEditor({ mode, onClose, onSave }: {
           {options.managers.filter(item => item.id !== user?.id).map(({ id, name }) => <option key={id} value={id}>{name}</option>)}
         </select></label>
       </fieldset>}
+      {mode.kind === 'create' && options?.initialPasswordAvailable && <div className="user-password-info">
+        <strong>Initial password</strong>
+        <p>A one-time display of the generated password appears here after you create a new sign-in account.</p>
+      </div>}
       {error && <p className="field-error" role="alert">{error}</p>}
       <footer>
         <button type="button" className="button button--secondary" disabled={saving} onClick={onClose}>Cancel</button>

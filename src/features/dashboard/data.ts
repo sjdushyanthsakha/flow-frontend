@@ -7,6 +7,7 @@ export type Project = {
   dueDate: string | null;
   members: string[];
   owner: string | null;
+  ownerId: string | null;
 };
 
 export type Task = {

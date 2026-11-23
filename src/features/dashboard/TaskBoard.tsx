@@ -16,6 +16,7 @@ export type BoardUpdate = Pick<Task, 'id' | 'status' | 'boardPosition' | 'update
 type Props = {
   tasks: Task[];
   project?: Project;
+  projects: Project[];
   members: Member[];
   timeZone: string;
   workspaceSearch: string;
@@ -71,12 +72,13 @@ function BoardCard({ task, details, today, memberIndex, scoped, onOpen }: {
   </button>;
 }
 
-export function TaskBoard({ tasks, project, members, timeZone, workspaceSearch, revision, saving, onMove, onEdit, onOpen, onCreate }: Props) {
+export function TaskBoard({ tasks, project, projects, members, timeZone, workspaceSearch, revision, saving, onMove, onEdit, onOpen, onCreate }: Props) {
   const dashboardRequest = useDashboardRequest();
   const [draggedId, setDraggedId] = useState('');
   const [search, setSearch] = useState('');
   const [assignee, setAssignee] = useState('');
   const [priority, setPriority] = useState('');
+  const [projectFilter, setProjectFilter] = useState('');
   const [details, setDetails] = useState<Record<string, CardDetails>>({});
   const [detailsError, setDetailsError] = useState('');
   const [attempt, setAttempt] = useState(0);
@@ -95,10 +97,12 @@ export function TaskBoard({ tasks, project, members, timeZone, workspaceSearch, 
   }, [project, tasks, revision, attempt]);
 
   const boardQuery = search.trim().toLowerCase();
-  const filtered = Boolean(boardQuery || workspaceSearch || assignee || priority);
+  const filtered = Boolean(boardQuery || workspaceSearch || assignee || priority || projectFilter);
   const canMove = !saving && !filtered;
   const today = dateKey(new Date(), timeZone);
-  const scope = project ? tasks.filter(({ projectId }) => projectId === project.id) : tasks;
+  const scope = project
+    ? tasks.filter(({ projectId }) => projectId === project.id)
+    : projectFilter ? tasks.filter(({ projectId }) => projectId === projectFilter) : tasks;
   const priorities = [...new Set(['Urgent', 'High', 'Medium', 'Low', ...scope.flatMap((task) => task.priority ? [task.priority] : [])])];
   const visible = new Set(scope.filter((task) => {
     const text = [task.title, task.description, task.project, task.status, task.assignee, ...(details[task.id]?.labels ?? [])].join(' ').toLowerCase();
@@ -174,6 +178,10 @@ export function TaskBoard({ tasks, project, members, timeZone, workspaceSearch, 
             <option value="">All priorities</option><option value="none">No priority</option>
             {priorities.map((item) => <option key={item}>{item}</option>)}
           </select></label>
+          {!project && <label className="board-filter"><Icon name="folder" /><select aria-label="Filter by project" value={projectFilter} onChange={(event) => setProjectFilter(event.target.value)}>
+            <option value="">All projects</option>
+            {projects.map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}
+          </select></label>}
           <span className="board-task-count" aria-live="polite">{visible.size} {visible.size === 1 ? 'task' : 'tasks'}</span>
         </div>
       </div>

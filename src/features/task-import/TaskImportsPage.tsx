@@ -20,7 +20,13 @@ const columns = [
   { key: 'assignee_email', label: 'Assignee email', aliases: ['assignee email', 'email'] },
 ];
 const normalizeHeader = (value: string) => value.trim().toLowerCase().replace(/[_-]+/g, ' ');
-const asCellText = (value: unknown) => value instanceof Date ? value.toISOString().slice(0, 10) : String(value ?? '');
+const asCellText = (value: unknown) => {
+  if (!(value instanceof Date) || Number.isNaN(value.getTime())) return String(value ?? '');
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, '0');
+  const day = String(value.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 const time = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit' });
 const day = new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', year: 'numeric' });
 
@@ -155,7 +161,7 @@ export function ImportTasks({ projects, onComplete }: { projects: Project[]; onC
         </div>
         <aside className="import-tips">
           <h2>Before you upload</h2>
-          <ul>{['Keep column headers in the first row', 'Task Title and Project are required', 'Use Flowdeck status names for best results'].map(tip =>
+          <ul>{['Keep column headers in the first row', 'Task Title and Project are required', 'Use YYYY-MM-DD in the Due date column', 'Use Flowdeck status names for best results'].map(tip =>
             <li key={tip}><Icon name="check" />{tip}</li>)}</ul>
         </aside>
       </div> : <div className="import-step-content">
